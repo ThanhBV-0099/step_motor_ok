@@ -54,16 +54,67 @@ uint16_t goc=0;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 /* USER CODE BEGIN PFP */
-uint16_t time_ox,time_oz,sobuoc_ox,sobuoc_oz,sp_ox,sp_oz,value_ox,value_oz;
+void step_controller(void);
+uint16_t i,time_ox,time_oz,sobuoc_ox,sobuoc_oz,sp_ox,sp_oz,value_ox,value_oz;
 uint16_t c_enc1,c_enc,enc1,enc;
-uint16_t tocdo_ox=100, tocdo_oz=50;
+uint16_t tocdo_ox=50, tocdo_oz=100;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-void abc(void)
+void step_controller(void)
 {
+ if(i==0)
+{	
+		if(value_oz==0)
+		{
+		HAL_GPIO_WritePin(dir_oz,GPIO_PIN_RESET);
+		if(sp_oz>=tocdo_oz)  // speed : 100
+		{
+		sp_oz=0;
+		sobuoc_oz++;
+		HAL_GPIO_TogglePin(step1_oz);
+		}
+		else
+		{
+			sp_oz++;
+		}
+		}
+		if( sobuoc_oz==400)
+		{
+		time_oz++;	
+		if(enc1==0)
+		{
+			value_oz=1;
+			enc1=1;
+			c_enc1++;
+	}
+}
+		else
+		{
+			enc1=0;
+		}
+		if(time_oz>=10000) // tg dung
+		{
+			if(c_enc1<10)
+			{
+			value_oz=0;
+			time_oz=0;
+			sobuoc_oz=0;
+			sp_oz=tocdo_oz;
+			}
+			else
+			{
+			value_oz=1;	
+			c_enc1=0;
+			i=1;	
+			}
+		}
+}
+//------
+if(i==1)
+	{
 	if(value_ox==0)
 	{
 		HAL_GPIO_WritePin(dir_ox,GPIO_PIN_RESET);
@@ -83,62 +134,15 @@ void abc(void)
 			time_ox++;
 			value_ox=1;
 		}
-		if(time_ox>=10000)  // delay
+		if(time_ox>=10000)  // tg dung
 		{
 			value_ox=0;
 			time_ox=0;
 			sobuoc_ox=0;
 			sp_ox=tocdo_ox;
 		}
-		
-		if(value_oz==0)
-		{
-		if(sp_oz>=tocdo_oz)  // speed : 100
-		{
-		sp_oz=0;
-		sobuoc_oz++;
-		HAL_GPIO_TogglePin(step1_oz);
-		}
-		else
-		{
-			sp_oz++;
-		}
-		}
-		if( sobuoc_oz==1600)
-		{
-		time_oz++;	
-		if(enc1==0)
-		{
-			value_oz=1;
-			enc1=1;
-			c_enc1++;
 	}
 }
-		else
-		{
-			enc1=0;
-		}
-//		//if(i1==400)  // 1 vong 400
-//		{
-//			b1++;
-//			a1=1;
-//		}
-		if(time_oz>=10000) //delay
-		{
-//			if(c_enc1<10)
-			{
-			value_oz=0;
-			time_oz=0;
-			sobuoc_oz=0;
-			sp_oz=tocdo_oz;
-			}
-//			else
-//			{
-//			value_oz=1;
-//			}
-		}
-}
-
 
 /* USER CODE END 0 */
 
@@ -182,33 +186,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		
-		abc();
-//		HAL_GPIO_TogglePin(LED_GPIO_Port,LED_Pin);
-		//for(int16_t i=0;i<2025;i++)
-//	if(goc==0)
-//		{
-//		for(uint16_t i=0;i<400;i++)
-//		{
-//			HAL_GPIO_WritePin(step,GPIO_PIN_SET);
-//			speed();
-//			HAL_GPIO_WritePin(step,GPIO_PIN_RESET);
-//			speed();
-//		}
-//		break;
-		
-//	}
-//		else if(goc==1)
-//		{
-//				for(uint16_t y=0;y<100;y++)
-//		{
-//			HAL_GPIO_WritePin(step,GPIO_PIN_SET);
-//			HAL_Delay(1);
-//			HAL_GPIO_WritePin(step,GPIO_PIN_RESET);
-//			HAL_Delay(1);
-//		}
-//	}
-		//HAL_Delay(1000);
+		step_controller();
   }
   /* USER CODE END 3 */
 }
