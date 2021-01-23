@@ -33,9 +33,10 @@ uint16_t goc=0;
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define dir DIR_GPIO_Port,DIR_Pin
-#define step STEP_GPIO_Port,STEP_Pin
-
+#define dir_ox DIR_1_GPIO_Port,DIR_1_Pin
+#define step1_ox STEP_1_GPIO_Port,STEP_1_Pin
+#define dir_oz DIR_2_GPIO_Port,DIR_2_Pin
+#define step1_oz STEP_2_GPIO_Port,STEP_2_Pin
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -53,9 +54,9 @@ uint16_t goc=0;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 /* USER CODE BEGIN PFP */
-uint16_t i,a,a1,b,b1,i1;
-uint16_t sp;
-uint16_t y,sp1;
+uint16_t time_ox,time_oz,sobuoc_ox,sobuoc_oz,sp_ox,sp_oz,value_ox,value_oz;
+uint16_t c_enc1,c_enc,enc1,enc;
+uint16_t tocdo_ox=100, tocdo_oz=50;
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -63,60 +64,81 @@ uint16_t y,sp1;
 
 void abc(void)
 {
-	if(a==0)
+	if(value_ox==0)
 	{
-		if(sp>=30)  // speed : 100
+		HAL_GPIO_WritePin(dir_ox,GPIO_PIN_RESET);
+		if(sp_ox>=tocdo_ox)  // speed : 100
 		{
-		sp=0;
-		i++;
-//		HAL_GPIO_TogglePin(STEP_GPIO_Port,STEP_Pin);
-		HAL_GPIO_TogglePin(LED1_GPIO_Port,LED1_Pin);
+		sp_ox=0;
+		sobuoc_ox++;
+		HAL_GPIO_TogglePin(step1_ox);
 		}
 		else
 		{
-			sp++;
+			sp_ox++;
 		}
 	}
-		if(i==4000)  // 1 vong 400
+		if(sobuoc_ox==400)  // 1 vong 400
 		{
-			b++;
-			a=1;
+			time_ox++;
+			value_ox=1;
 		}
-		if(b>=10000)
+		if(time_ox>=10000)  // delay
 		{
-			a=0;
-			b=0;
-			i=0;
-			sp=30;
+			value_ox=0;
+			time_ox=0;
+			sobuoc_ox=0;
+			sp_ox=tocdo_ox;
 		}
 		
-		if(a1==0)
-	{
-		if(sp1>=30)  // speed : 100
+		if(value_oz==0)
 		{
-		sp1=0;
-		i1++;
-		HAL_GPIO_TogglePin(LED_GPIO_Port,LED_Pin);
-		HAL_GPIO_TogglePin(STEP_GPIO_Port,STEP_Pin);
+		if(sp_oz>=tocdo_oz)  // speed : 100
+		{
+		sp_oz=0;
+		sobuoc_oz++;
+		HAL_GPIO_TogglePin(step1_oz);
 		}
 		else
 		{
-			sp1++;
+			sp_oz++;
 		}
+		}
+		if( sobuoc_oz==1600)
+		{
+		time_oz++;	
+		if(enc1==0)
+		{
+			value_oz=1;
+			enc1=1;
+			c_enc1++;
 	}
-		if(i1==400)  // 1 vong 400
+}
+		else
 		{
-			b1++;
-			a1=1;
+			enc1=0;
 		}
-		if(b1>=10000)
+//		//if(i1==400)  // 1 vong 400
+//		{
+//			b1++;
+//			a1=1;
+//		}
+		if(time_oz>=10000) //delay
 		{
-			a1=0;
-			b1=0;
-			i1=0;
-			sp1=30;
+//			if(c_enc1<10)
+			{
+			value_oz=0;
+			time_oz=0;
+			sobuoc_oz=0;
+			sp_oz=tocdo_oz;
+			}
+//			else
+//			{
+//			value_oz=1;
+//			}
 		}
 }
+
 
 /* USER CODE END 0 */
 
@@ -150,7 +172,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
-
+	
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -160,7 +182,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		HAL_GPIO_WritePin(dir,GPIO_PIN_RESET);
+		
 		abc();
 //		HAL_GPIO_TogglePin(LED_GPIO_Port,LED_Pin);
 		//for(int16_t i=0;i<2025;i++)
@@ -235,14 +257,25 @@ static void MX_GPIO_Init(void)
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, STEP_2_Pin|DIR_2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, LED1_Pin|LED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, STEP_Pin|DIR_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, STEP_1_Pin|DIR_1_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : STEP_2_Pin DIR_2_Pin */
+  GPIO_InitStruct.Pin = STEP_2_Pin|DIR_2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LED1_Pin LED_Pin */
   GPIO_InitStruct.Pin = LED1_Pin|LED_Pin;
@@ -251,8 +284,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : STEP_Pin DIR_Pin */
-  GPIO_InitStruct.Pin = STEP_Pin|DIR_Pin;
+  /*Configure GPIO pins : STEP_1_Pin DIR_1_Pin */
+  GPIO_InitStruct.Pin = STEP_1_Pin|DIR_1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
